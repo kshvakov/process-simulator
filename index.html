@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Process Board Simulator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0e0e12;
+    --surface: #16161d;
+    --surface2: #1e1e28;
+    --border: #2a2a38;
+    --text: #e0e0e8;
+    --text-dim: #8888a0;
+    --accent: #6c7aff;
+    --fast-track: #22c55e;
+    --investigation: #f59e0b;
+    --refinement: #6c7aff;
+    --techdebt: #a855f7;
+    --incident: #ef4444;
+    --neutral: #64748b;
+    --col-active: rgba(108, 122, 255, 0.08);
+    --card-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app { max-width: 1440px; margin: 0 auto; padding: 24px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+
+  .case-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .case-selector label {
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .case-selector select {
+    flex: 1;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    max-width: 600px;
+  }
+
+  .case-selector select:focus { border-color: var(--accent); }
+
+  optgroup { font-weight: 600; color: var(--text-dim); }
+
+  .case-info {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: none;
+  }
+
+  .case-info.visible { display: block; }
+
+  .case-info h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .case-meta {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .case-meta .tag {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .tag-fast-track { background: rgba(34,197,94,0.15); color: var(--fast-track); }
+  .tag-investigation { background: rgba(245,158,11,0.15); color: var(--investigation); }
+  .tag-refinement { background: rgba(108,122,255,0.15); color: var(--refinement); }
+  .tag-techdebt { background: rgba(168,85,247,0.15); color: var(--techdebt); }
+  .tag-incident { background: rgba(239,68,68,0.15); color: var(--incident); }
+  .tag-mixed { background: rgba(100,116,139,0.15); color: var(--neutral); }
+
+  .case-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+
+  .boards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .board {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .board-header {
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .board-header .board-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .board-columns {
+    display: grid;
+    min-height: 120px;
+    position: relative;
+  }
+
+  #refinement-board .board-columns {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  #work-board .board-columns {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .column {
+    border-right: 1px solid var(--border);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s ease;
+    position: relative;
+    min-height: 100px;
+  }
+
+  .column:last-child { border-right: none; }
+
+  .column.active { background: var(--col-active); }
+
+  .column-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+    transition: color 0.3s ease;
+  }
+
+  .column.active .column-name { color: var(--accent); }
+
+  .card-slot {
+    width: 100%;
+    min-height: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .task-card {
+    width: 90%;
+    max-width: 160px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    transform: scale(0.8);
+    line-height: 1.3;
+  }
+
+  .task-card.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .task-card .track-badge {
+    display: block;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+
+  .task-card.fast-track { background: var(--fast-track); color: #000; }
+  .task-card.investigation { background: var(--investigation); color: #000; }
+  .task-card.refinement { background: var(--refinement); color: #fff; }
+  .task-card.techdebt { background: var(--techdebt); color: #fff; }
+  .task-card.incident { background: var(--incident); color: #fff; }
+  .task-card.mixed { background: var(--neutral); color: #fff; }
+
+  .external-board {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .external-board.visible { display: block; }
+
+  .external-board .board-header .board-icon { background: var(--incident); }
+
+  .external-board .board-columns {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 80px;
+  }
+
+  .step-commentary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    min-height: 60px;
+    display: none;
+  }
+
+  .step-commentary.visible { display: block; }
+
+  .step-commentary .step-label {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .step-commentary .step-actor {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .step-commentary .step-highlight {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(108, 122, 255, 0.08);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    color: var(--accent);
+  }
+
+  .step-commentary .step-highlight.problem {
+    background: rgba(245, 158, 11, 0.08);
+    border-left-color: var(--investigation);
+    color: var(--investigation);
+  }
+
+  .step-commentary .step-highlight.blocker {
+    background: rgba(239, 68, 68, 0.08);
+    border-left-color: var(--incident);
+    color: var(--incident);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .controls button {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .controls button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .controls button:disabled:hover { border-color: var(--border); color: var(--text); }
+
+  .controls button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .controls button.primary:hover { opacity: 0.85; color: #fff; border-color: var(--accent); }
+  .controls button.primary:disabled { opacity: 0.3; }
+
+  .step-counter {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: auto;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-bar.visible { display: block; }
+
+  .progress-bar .fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-size: 15px;
+  }
+
+  .empty-state .arrow { font-size: 24px; margin-bottom: 12px; display: block; }
+
+  @media (max-width: 900px) {
+    .app { padding: 16px; }
+    header { flex-direction: column; align-items: stretch; }
+    .case-selector { min-width: 0; }
+    .case-selector select { max-width: none; }
+    #refinement-board .board-columns { grid-template-columns: repeat(5, 1fr); }
+    #work-board .board-columns { grid-template-columns: repeat(6, 1fr); }
+    .column-name { font-size: 9px; }
+    .task-card { font-size: 10px; padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Process Board Simulator</h1>
+    <div class="case-selector">
+      <label for="case-select">Кейс:</label>
+      <select id="case-select">
+        <option value="">Выберите кейс...</option>
+      </select>
+    </div>
+  </header>
+
+  <div id="case-info" class="case-info">
+    <div class="case-meta" id="case-meta"></div>
+    <h2 id="case-title"></h2>
+    <div class="case-description" id="case-description"></div>
+  </div>
+
+  <div class="boards-container">
+    <div class="board" id="refinement-board">
+      <div class="board-header"><span class="board-icon"></span>Refinement</div>
+      <div class="board-columns">
+        <div class="column" data-board="refinement" data-col="draft">
+          <div class="column-name">Draft</div>
+          <div class="card-slot"></div>
+        </div>
+        <div class="column" data-board="refinement" data-col="product-review">
+          <div class="column-name">Product Review</div>
+          <div class="card-slot"></div>
+        </div>
+        <div class="column" data-board="refinement" data-col="tech-review">
+          <div class="column-name">Tech Review</div>
+          <div class="card-slot"></div>
+        </div>
+        <div class="column" data-board="refinement" data-col="consilium">
+          <div class="column-name">Consilium</div>
+          <div class="card-slot"></div>
+        </div>
+        <div class="column" data-board="refinement" data-col="ready">
+          <div class="column-name">Ready</div>
+          <div class="card-slot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="board" id="work-board">
+      <div class="board-header"><span class="board-icon"></span>Work</div>
+      <div class="board-columns">
+        <div class="column" data-board="work" data-col="todo">
+          <div class="column-name">To do</div>
+          <div class="card-slot"></div>
+        </div>
+        <div class="column" data-board="work" data-col="in-progress">
+          <div class="column-name">In progress</div>
+          <div class="card-slot"></div>
+        </div>
+        <div class="column" data-board="work" data-col="review">
+          <div class="column-name">Review</div>
+          <div class="card-slot"></div>
+        </div>
+        <div class="column" data-board="work" data-col="testing">
+          <div class="column-name">Testing</div>
+          <div class="card-slot"></div>
+        </div>
+        <div class="column" data-board="work" data-col="deploy">
+          <div class="column-name">Deploy</div>
+          <div class="card-slot"></div>
+        </div>
+        <div class="column" data-board="work" data-col="done">
+          <div class="column-name">Done</div>
+          <div class="card-slot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="external-board" id="external-board">
+      <div class="board-header"><span class="board-icon"></span><span id="external-board-name">External</span></div>
+      <div class="board-columns">
+        <div class="column" data-board="external" data-col="external">
+          <div class="column-name" id="external-col-name">—</div>
+          <div class="card-slot"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="step-commentary" class="step-commentary">
+    <div class="step-label" id="step-label"></div>
+    <div class="step-actor" id="step-actor"></div>
+    <div class="step-highlight" id="step-highlight"></div>
+  </div>
+
+  <div class="controls" id="controls" style="display:none">
+    <button id="btn-prev" disabled>&#8592; Назад</button>
+    <button id="btn-next" class="primary">Далее &#8594;</button>
+    <button id="btn-autoplay">&#9654; Автоплей</button>
+    <button id="btn-reset">Сброс</button>
+    <span class="step-counter" id="step-counter"></span>
+  </div>
+
+  <div class="progress-bar" id="progress-bar">
+    <div class="fill" id="progress-fill"></div>
+  </div>
+
+  <div class="empty-state" id="empty-state">
+    <span class="arrow">&#8593;</span>
+    Выберите кейс из списка, чтобы увидеть как задача проходит по доскам
+  </div>
+</div>
+
+<script>
+const CASES = [
+  {
+    id: 1, wave: 1,
+    title: "Тривиальный баг — кнопка не того цвета",
+    track: "fast-track",
+    description: "QA нашёл, что кнопка «Сохранить» синяя вместо зелёной. Скриншот приложен. Решение очевидно — поменять цвет.",
+    cardLabel: "Цвет кнопки",
+    steps: [
+      { board: "work", column: "in-progress", label: "Разработчик берёт баг, фикс — одна строка CSS", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью: тривиальное изменение, approve", actor: "Dev" },
+      { board: "work", column: "testing", label: "QA проверяет — кнопка зелёная", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой в прод", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Fast track отработал идеально", actor: "—" }
+    ]
+  },
+  {
+    id: 2, wave: 1,
+    title: "Классическая фича — новый способ оплаты (СБП)",
+    track: "refinement",
+    description: "PM хочет добавить оплату через СБП. Новая логика, новый контракт с провайдером, нужна полная проработка.",
+    cardLabel: "Оплата СБП",
+    steps: [
+      { board: "refinement", column: "draft", label: "PM создаёт задачу: «Добавить оплату через СБП»", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer: сценарии, AC, вопросы P0 (провайдер? таймаут? возвраты?)", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "Техлид прогоняет task-formalizer: риски, зависимости, оценка. QA ревьюит тест-матрицу", actor: "TL + QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум: закрывают P0 вопросы — какой провайдер, что при таймауте, как возвраты", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Все P0 закрыты, AC проверяемые, тест-план есть. Задача готова", actor: "—" },
+      { board: "work", column: "todo", label: "Задача попадает в очередь Work", actor: "—" },
+      { board: "work", column: "in-progress", label: "Разработчик берёт задачу, начинает реализацию", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "QA тестирует по готовому тест-плану", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Целевой сценарий процесса", actor: "—" }
+    ]
+  },
+  {
+    id: 3, wave: 1,
+    title: "Investigation → простой фикс",
+    track: "investigation",
+    description: "Клиент жалуется: видео иногда не начинает играть. Воспроизводится у 2% пользователей. Причина неизвестна.",
+    cardLabel: "Видео не играет",
+    steps: [
+      { board: "work", column: "in-progress", label: "Investigation: разработчик анализирует логи, ищет паттерн", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Диагноз: race condition при инициализации плеера, если CDN < 50ms", actor: "Dev", highlight: { type: "rule", text: "Timebox investigation: 1 день. Уложились за 4 часа" } },
+      { board: "work", column: "in-progress", label: "Фикс простой — 3 строки. Дочиниваем тут же, как fast track", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "QA проверяет фикс", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Investigation → простой фикс на месте", actor: "—" }
+    ]
+  },
+  {
+    id: 4, wave: 1,
+    title: "Investigation → сложный фикс → Refinement",
+    track: "investigation",
+    description: "Деградация производительности транскодера на 30% за месяц. Причина неизвестна, нужно расследование.",
+    cardLabel: "Деградация транскодера",
+    steps: [
+      { board: "work", column: "in-progress", label: "Investigation: профилирование, анализ метрик", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Диагноз: AV1 ест CPU непропорционально, нужно менять стратегию распределения по нодам", actor: "Dev", highlight: { type: "rule", text: "Фикс сложный — затрагивает архитектуру. Переход в Refinement" } },
+      { board: "work", column: "done", label: "Investigation закрыта с диагнозом в комментарии", actor: "Dev" },
+      { board: "refinement", column: "tech-review", label: "Техлид создаёт задачу сразу в Tech Review (чисто техническая, минуя Draft и Product Review)", actor: "TL" },
+      { board: "refinement", column: "consilium", label: "Консилиум: обсуждают архитектуру нового распределения", actor: "TL + QA" },
+      { board: "refinement", column: "ready", label: "Спецификация готова, тест-план согласован", actor: "—" },
+      { board: "work", column: "todo", label: "Задача в очереди Work", actor: "—" },
+      { board: "work", column: "in-progress", label: "Разработка нового распределения задач по нодам", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Investigation → Refinement → Work", actor: "—" }
+    ]
+  },
+  {
+    id: 5, wave: 1,
+    title: "Инцидент — платежи не проходят (прод лежит)",
+    track: "incident",
+    description: "Мониторинг: 100% ошибок на эндпоинте оплаты. Прод лежит. Это не fast track и не investigation — это инцидент.",
+    cardLabel: "Платежи лежат",
+    steps: [
+      { board: "external", column: "external", label: "Инцидент! Переход в отдельный процесс incident-management.md", actor: "On-call", externalName: "Incident Management", externalCol: "Отдельный процесс", highlight: { type: "blocker", text: "Правило 12: Инциденты живут по отдельному процессу, не по этому документу" } },
+      { board: "external", column: "external", label: "Фикс / откат / hotfix по процессу incident management", actor: "On-call + TL", externalName: "Incident Management", externalCol: "Отдельный процесс" },
+      { board: "external", column: "external", label: "Постмортем. Если нужна системная доработка — задача в Refinement", actor: "TL", externalName: "Incident Management", externalCol: "Отдельный процесс" }
+    ]
+  },
+  {
+    id: 6, wave: 1,
+    title: "Фича frontend + backend — дашборд аналитики",
+    track: "refinement",
+    description: "Новый дашборд аналитики для клиентов. Backend: API + агрегация в ClickHouse. Frontend: новые страницы. Задача на стыке двух стеков.",
+    cardLabel: "Дашборд аналитики",
+    steps: [
+      { board: "refinement", column: "draft", label: "PM создаёт задачу «Дашборд аналитики для клиентов»", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer: сценарии, метрики, AC", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "Техлид определяет контракт gRPC/GraphQL между frontend и backend. Контракт фиксируется в спецификации", actor: "TL + QA", highlight: { type: "rule", text: "Правило 10: Контракт до разработки. Без контракта задача не переходит в Ready" } },
+      { board: "refinement", column: "consilium", label: "Консилиум: закрывают вопросы по API, формату данных, пагинации", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Контракт зафиксирован, задача готова. Порождает 2 дочерние карточки", actor: "—" },
+      { board: "work", column: "todo", label: "Дочерняя: Backend API (дорожка Backend)", actor: "—" },
+      { board: "work", column: "todo", label: "Дочерняя: Frontend UI (дорожка Frontend). Параллельная разработка по контракту", actor: "—" },
+      { board: "work", column: "in-progress", label: "Backend и Frontend разрабатываются параллельно", actor: "Dev + Dev" },
+      { board: "work", column: "review", label: "Код-ревью обеих частей", actor: "Dev" },
+      { board: "work", column: "testing", label: "Каждая часть тестируется отдельно + интеграционный тест", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Родительская задача закрывается когда обе дочерние в Done", actor: "—" }
+    ]
+  },
+  {
+    id: 7, wave: 1,
+    title: "PM занят — задачи в Draft стоят (PM SPOF)",
+    track: "refinement",
+    description: "5 задач в Draft, PM уехал на конференцию на 3 дня. Воронка стоит.",
+    cardLabel: "Задача в Draft",
+    steps: [
+      { board: "refinement", column: "draft", label: "Задача создана в Draft. PM недоступен 3 дня", actor: "—", highlight: { type: "problem", text: "PM SPOF: воронка стоит" } },
+      { board: "refinement", column: "draft", label: "Отсутствие > 1 рабочего дня — заместитель берёт на себя Product Review", actor: "—", highlight: { type: "rule", text: "Правило 9: Замещение обязательно. Заместитель определяется заранее" } },
+      { board: "refinement", column: "product-review", label: "Заместитель PM прогоняет task-formalizer", actor: "PM (зам.)" },
+      { board: "refinement", column: "tech-review", label: "Техлид делает Tech Review как обычно", actor: "TL + QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум с заместителем PM", actor: "PM (зам.) + TL + QA" },
+      { board: "refinement", column: "ready", label: "Задача готова. Замещение сработало", actor: "—" }
+    ]
+  },
+  {
+    id: 8, wave: 1,
+    title: "Техлид перегружен — Tech Review копится (TL SPOF)",
+    track: "refinement",
+    description: "4 задачи в Product Review готовы, но техлид занят инцидентом. Tech Review копится.",
+    cardLabel: "Задача ждёт TL",
+    steps: [
+      { board: "refinement", column: "product-review", label: "Задача прошла Product Review, ждёт Tech Review. Техлид занят инцидентом", actor: "—", highlight: { type: "problem", text: "TL SPOF: воронка стоит" } },
+      { board: "refinement", column: "product-review", label: "Отсутствие > 1 дня — назначенный Senior берёт Tech Review", actor: "—", highlight: { type: "rule", text: "Правило 9: Заместитель техлида — назначенный Senior" } },
+      { board: "refinement", column: "tech-review", label: "Senior прогоняет task-formalizer, QA ревьюит тест-матрицу", actor: "Senior + QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум с Senior вместо техлида", actor: "PM + Senior + QA" },
+      { board: "refinement", column: "ready", label: "Задача готова. Замещение сработало", actor: "—" }
+    ]
+  },
+  {
+    id: 9, wave: 1,
+    title: "Investigation затянулась — timebox превышен",
+    track: "investigation",
+    description: "Плавающий баг — раз в 3 дня у случайного клиента не загружаются субтитры. Логи чистые. Причина не найдена за день.",
+    cardLabel: "Субтитры не грузятся",
+    steps: [
+      { board: "work", column: "in-progress", label: "День 1: разработчик ищет причину. Логи чистые, воспроизвести не удаётся", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Timebox 1 день превышен — эскалация на техлида", actor: "Dev → TL", highlight: { type: "rule", text: "Эскалация Investigation: День 1 — Dev, День 2 — TL подключается" } },
+      { board: "work", column: "in-progress", label: "День 2: техлид + разработчик ищут вместе. Нашли зацепку в CDN-логах", actor: "TL + Dev" },
+      { board: "work", column: "in-progress", label: "День 3: если не нашли — решение: RnD-слот / принять риск / внешняя экспертиза", actor: "TL", highlight: { type: "rule", text: "Эскалация День 3: одно из трёх решений" } },
+      { board: "work", column: "in-progress", label: "Нашли: CDN кеширует 304 для субтитров при определённом User-Agent. Фикс — заголовок Vary", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Затянувшийся investigation с эскалацией", actor: "—" }
+    ]
+  },
+  {
+    id: 10, wave: 1,
+    title: "Fast track оказался не fast — переклассификация",
+    track: "fast-track",
+    description: "«Поправить текст ошибки при загрузке видео». Выглядит как одна строка. Оказалось — текст формируется в 3 сервисах, нужно менять gRPC-контракт.",
+    cardLabel: "Текст ошибки",
+    steps: [
+      { board: "work", column: "in-progress", label: "Разработчик берёт как fast track. Открывает код...", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Текст ошибки формируется в 3 сервисах, нужно менять gRPC-контракт", actor: "Dev", highlight: { type: "problem", text: "Fast track оказался сложнее. Затрагивает контракт — не fast track!" } },
+      { board: "work", column: "in-progress", label: "Разработчик останавливается, уведомляет техлида", actor: "Dev → TL", highlight: { type: "rule", text: "Правило 11: Переклассификация — не позор. Дотягивать на коленке запрещено" } },
+      { board: "refinement", column: "tech-review", label: "Техлид переклассифицирует в Refinement. Создаёт задачу в Tech Review", actor: "TL" },
+      { board: "refinement", column: "consilium", label: "Консилиум: обсуждают контракт между сервисами", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Спецификация готова с новым контрактом", actor: "—" },
+      { board: "work", column: "todo", label: "Задача в очереди Work", actor: "—" },
+      { board: "work", column: "in-progress", label: "Разработка с правильным scope", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Переклассификация сработала", actor: "—" }
+    ]
+  },
+  {
+    id: 11, wave: 1,
+    title: "Консилиум не может договориться — эскалация",
+    track: "refinement",
+    description: "Фича «ограничение доступа по IP». PM хочет whitelist, техлид — и blacklist тоже. QA: «а IPv6?». P0 не закрывается.",
+    cardLabel: "Доступ по IP",
+    steps: [
+      { board: "refinement", column: "draft", label: "PM создаёт задачу", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "Техлид прогоняет, QA ревьюит тест-матрицу", actor: "TL + QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум: PM и техлид не согласны по scope (whitelist vs blacklist)", actor: "PM + TL + QA", highlight: { type: "problem", text: "Разногласие на консилиуме. Кто арбитр?" } },
+      { board: "refinement", column: "consilium", label: "Продуктовый вопрос → финальное решение за PM. Технический → за техлидом", actor: "PM + TL", highlight: { type: "rule", text: "Эскалация: продукт → PM, техника → TL, не договорились → CEO/CPO/CTO" } },
+      { board: "refinement", column: "consilium", label: "PM решает: только whitelist в v1. Техлид фиксирует архитектуру под расширение", actor: "PM + TL" },
+      { board: "refinement", column: "ready", label: "Вопрос закрыт, задача готова", actor: "—" }
+    ]
+  },
+  {
+    id: 12, wave: 1,
+    title: "Зависимость от дизайна — блокер",
+    track: "refinement",
+    description: "Фича «новый интерфейс управления трансляциями». Нужен дизайн. Дизайн живёт в другом пространстве, связи нет.",
+    cardLabel: "UI трансляций",
+    steps: [
+      { board: "refinement", column: "draft", label: "PM создаёт задачу. Дизайн ещё не готов", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer. Но макетов нет — AC неполные", actor: "PM", highlight: { type: "problem", text: "Дизайн не готов. Двигать дальше или ждать?" } },
+      { board: "refinement", column: "product-review", label: "Задача застревает. Дизайн в другом пространстве, формальной связи нет", actor: "—", highlight: { type: "blocker", text: "Открытый вопрос: зависимость от дизайна. Процесс это не решает — см. раздел «Открытые вопросы»" } }
+    ]
+  },
+  {
+    id: 13, wave: 2,
+    title: "Фича отменяется на полпути через Refinement",
+    track: "refinement",
+    description: "PM создал задачу «Интеграция с платёжной системой X». На Tech Review выяснилось — у X нет API для юрлиц в РФ. Задача бессмысленна.",
+    cardLabel: "Интеграция X",
+    steps: [
+      { board: "refinement", column: "draft", label: "PM создаёт задачу", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "Техлид обнаруживает: у X нет API для юрлиц в РФ. Задача бессмысленна", actor: "TL", highlight: { type: "problem", text: "Задача стала неактуальной на середине воронки" } },
+      { board: "refinement", column: "tech-review", label: "Техлид закрывает задачу со статусом Cancelled и указывает причину", actor: "TL", highlight: { type: "rule", text: "Правило 13: Задачу можно отменить на любом этапе Refinement" } }
+    ]
+  },
+  {
+    id: 14, wave: 2,
+    title: "QA — bottleneck: Refinement и Work одновременно",
+    track: "mixed",
+    description: "3 задачи в Tech Review ждут ревью тест-матрицы. 2 задачи в Testing ждут тестирования. QA один — кто-то ждёт.",
+    cardLabel: "QA перегружен",
+    steps: [
+      { board: "refinement", column: "tech-review", label: "3 задачи ждут ревью тест-матрицы от QA", actor: "—" },
+      { board: "work", column: "testing", label: "2 задачи ждут тестирования от QA", actor: "—" },
+      { board: "work", column: "testing", label: "QA один — приоритет: Testing (блокирует деплой) важнее Refinement (подождёт)", actor: "QA", highlight: { type: "problem", text: "Открытый вопрос: QA bottleneck. Shift left увеличивает нагрузку. Нужно больше тестировщиков или fast test" } }
+    ]
+  },
+  {
+    id: 15, wave: 2,
+    title: "Техдолг — рефакторинг транскодера",
+    track: "techdebt",
+    description: "Техлид хочет отрефакторить модуль транскодера. Не баг, не фича — но без рефакторинга следующие задачи будут стоить x3.",
+    cardLabel: "Рефакторинг транскодера",
+    steps: [
+      { board: "refinement", column: "tech-review", label: "Техлид создаёт задачу сразу в Tech Review с обоснованием. Минует Draft и Product Review", actor: "TL", highlight: { type: "rule", text: "Техдолг: вход от техлида, сразу в Tech Review" } },
+      { board: "refinement", column: "tech-review", label: "Техлид прогоняет task-formalizer. Другой техлид (или CTO) ревьюит", actor: "TL + CTO", highlight: { type: "rule", text: "Правило 18: Техдолг ревьюит не автор" } },
+      { board: "refinement", column: "tech-review", label: "QA ревьюит тест-матрицу как обычно", actor: "QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум (если есть открытые вопросы)", actor: "TL + QA" },
+      { board: "refinement", column: "ready", label: "Задача готова. Приоритизация — CTO и тимлиды, не PM", actor: "CTO" },
+      { board: "work", column: "todo", label: "Задача в очереди. Квота: из 5 задач минимум 1 — техдолг", actor: "—", highlight: { type: "rule", text: "Правило 16: Баланс бизнес/техдолг 4:1" } },
+      { board: "work", column: "in-progress", label: "Разработка рефакторинга", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Техдолг прошёл через процесс", actor: "—" }
+    ]
+  },
+  {
+    id: 16, wave: 2,
+    title: "Срочный внешний запрос — фича к пятнице",
+    track: "refinement",
+    description: "Sales: крупный клиент хочет whitelist IP для embed-плеера к пятнице. Сегодня вторник. Полная воронка — впритык.",
+    cardLabel: "Whitelist IP",
+    steps: [
+      { board: "refinement", column: "draft", label: "PM создаёт срочную задачу", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "Ускоренная воронка: PM и техлид прогоняют task-formalizer вместе за один присест (30 мин)", actor: "PM + TL", highlight: { type: "rule", text: "Срочные запросы: ускоренная воронка, PM + TL вместе" } },
+      { board: "refinement", column: "tech-review", label: "Tech Review сразу после Product Review, QA ревьюит тест-матрицу", actor: "TL + QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум сразу — если есть вопросы", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Задача готова за полдня вместо 1-2 дней", actor: "—" },
+      { board: "work", column: "todo", label: "Высокий приоритет в очереди", actor: "PM" },
+      { board: "work", column: "in-progress", label: "Разработка", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой в четверг", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово к пятнице. Ускоренная воронка сработала", actor: "—" }
+    ]
+  },
+  {
+    id: 17, wave: 2,
+    title: "QA нашёл баг на Testing — возврат в In progress",
+    track: "refinement",
+    description: "Фича «экспорт аналитики» на Testing. QA нашёл: при > 10K строк файл обрезается.",
+    cardLabel: "Экспорт аналитики",
+    steps: [
+      { board: "work", column: "in-progress", label: "Разработчик реализовал фичу", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью пройден", actor: "Dev" },
+      { board: "work", column: "testing", label: "QA тестирует: при > 10K строк файл обрезается!", actor: "QA", highlight: { type: "problem", text: "Баг найден на Testing" } },
+      { board: "work", column: "in-progress", label: "Возврат в In progress тому же разработчику. Тег «возврат». QA описал проблему в комментарии", actor: "Dev", highlight: { type: "rule", text: "Возвраты Testing → In progress — нормальное явление. Отдельный тикет не создаётся" } },
+      { board: "work", column: "review", label: "Фикс + код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "QA перетестирует", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Один возврат — нормально", actor: "—" }
+    ]
+  },
+  {
+    id: 18, wave: 2,
+    title: "Внутренние зависимости — задача B ждёт задачу A",
+    track: "mixed",
+    description: "Фича A (новый API) и фича B (миграция на новый API) обе в Work. B зависит от A — обнаружилось в процессе.",
+    cardLabel: "Миграция API",
+    steps: [
+      { board: "work", column: "in-progress", label: "Разработчик 1 делает задачу A (новый API)", actor: "Dev 1" },
+      { board: "work", column: "in-progress", label: "Разработчик 2 начал задачу B (миграция) — обнаружил зависимость от A", actor: "Dev 2", highlight: { type: "problem", text: "Внутренняя зависимость, не пойманная на Tech Review" } },
+      { board: "work", column: "todo", label: "Задача B помечена Blocked + ссылка на задачу A. Откат в To do", actor: "Dev 2", highlight: { type: "rule", text: "Blocked: тег + причина + ссылка на блокирующую карточку. Откат в To do" } },
+      { board: "work", column: "in-progress", label: "Задача A завершена, блокер снят", actor: "Dev 1" },
+      { board: "work", column: "in-progress", label: "Задача B возвращается в In progress", actor: "Dev 2" },
+      { board: "work", column: "review", label: "Код-ревью задачи B", actor: "Dev 2" },
+      { board: "work", column: "testing", label: "Тестирование", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Blocked сработал для внутренних зависимостей", actor: "—" }
+    ]
+  },
+  {
+    id: 19, wave: 2,
+    title: "Приоритизация Ready → To do",
+    track: "refinement",
+    description: "5 задач в Ready, все проработаны. Все разработчики заняты. Кто решает, что брать следующим?",
+    cardLabel: "5 задач в Ready",
+    steps: [
+      { board: "refinement", column: "ready", label: "5 задач в Ready. Разработчик освободился — что брать?", actor: "—", highlight: { type: "problem", text: "Кто приоритизирует Ready → To do?" } },
+      { board: "refinement", column: "ready", label: "Бизнес-задачи приоритизирует PM. Техдолг — CTO/тимлиды", actor: "PM + CTO", highlight: { type: "rule", text: "Разработчик берёт верхнюю задачу по своей дорожке, а не выбирает" } },
+      { board: "work", column: "todo", label: "Верхняя задача переходит в To do", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Разработчик начинает работу", actor: "Dev" }
+    ]
+  },
+  {
+    id: 20, wave: 2,
+    title: "Регрессия после деплоя — субтитры сломались",
+    track: "fast-track",
+    description: "Задеплоили «новый формат субтитров». Через 2 часа: старый формат перестал работать у 5% клиентов.",
+    cardLabel: "Регрессия субтитров",
+    steps: [
+      { board: "work", column: "done", label: "Фича задеплоена. Через 2 часа — регрессия у 5% клиентов", actor: "—", highlight: { type: "problem", text: "Регрессия после деплоя. Не инцидент (прод не лежит), но сломано" } },
+      { board: "work", column: "in-progress", label: "Оптимальный путь — откат деплоя", actor: "Dev + TL", highlight: { type: "rule", text: "Регрессия: откат если возможно. Если невозможен — инцидент по incident-management.md" } },
+      { board: "work", column: "in-progress", label: "Откат выполнен. Далее — investigation: почему регрессия не поймана на Testing", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Investigation: нашли — тест-план не покрывал старый формат. Фикс + дополнение тестов", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью фикса", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование с расширенным тест-планом", actor: "QA" },
+      { board: "work", column: "deploy", label: "Повторный деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Откат + investigation + фикс", actor: "—" }
+    ]
+  },
+  {
+    id: 21, wave: 2,
+    title: "Изменение scope в Ready — возврат в начало",
+    track: "refinement",
+    description: "Задача «ограничение зрителей» в Ready. PM: «давайте добавим ограничение по географии». Это меняет scope.",
+    cardLabel: "Ограничение зрителей",
+    steps: [
+      { board: "refinement", column: "ready", label: "Задача в Ready. PM хочет добавить scope: ограничение по географии", actor: "PM", highlight: { type: "problem", text: "Изменение scope в Ready. Добавить на месте или вернуть?" } },
+      { board: "refinement", column: "product-review", label: "Возврат в Product Review. Без исключений", actor: "PM", highlight: { type: "rule", text: "Правило 14: Изменение scope в Ready = возврат в начало. Дополнение «комментарием к комментарию» запрещено" } },
+      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer заново с расширенным scope", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "Техлид ревьюит обновлённую спецификацию", actor: "TL + QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум по новому scope", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Задача снова в Ready с полным scope", actor: "—" }
+    ]
+  },
+  {
+    id: 22, wave: 2,
+    title: "Неполная спецификация обнаружена в Work",
+    track: "refinement",
+    description: "Разработчик начал делать задачу из Ready. Обнаружил: спецификация не описывает конкурентный доступ (два пользователя одновременно).",
+    cardLabel: "Конкурентный доступ",
+    steps: [
+      { board: "work", column: "in-progress", label: "Разработчик начал работу. Обнаружил: конкурентный доступ не продуман", actor: "Dev", highlight: { type: "problem", text: "Существенный пробел в спецификации — целый сценарий не продуман" } },
+      { board: "work", column: "in-progress", label: "Стоп. Существенный пробел → возврат в Tech Review", actor: "Dev", highlight: { type: "rule", text: "Правило 15: Неполная спецификация в Work = стоп. Критерий «мелкое»: не влияет на другие задачи и не меняет API-контракт" } },
+      { board: "refinement", column: "tech-review", label: "Техлид дорабатывает спецификацию: добавляет сценарий конкурентного доступа", actor: "TL" },
+      { board: "refinement", column: "consilium", label: "Быстрый консилиум по новому сценарию", actor: "TL + QA" },
+      { board: "refinement", column: "ready", label: "Спецификация дополнена, задача снова Ready", actor: "—" },
+      { board: "work", column: "in-progress", label: "Разработчик продолжает с полной спецификацией", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Стоп-правило предотвратило разработку по неполной спеке", actor: "—" }
+    ]
+  },
+  {
+    id: 23, wave: 3,
+    title: "Техдолг vs бизнес — борьба за Ready",
+    track: "mixed",
+    description: "В Ready 3 бизнес-задачи и 2 техдолга. Разработчик один свободен. PM: «бери мою, дедлайн». Техлид: «бери техдолг, без него x3».",
+    cardLabel: "Бизнес vs техдолг",
+    steps: [
+      { board: "refinement", column: "ready", label: "3 бизнес-задачи + 2 техдолга в Ready. Один свободный разработчик", actor: "—", highlight: { type: "problem", text: "Кто арбитр, когда бизнес и техника конкурируют за одного разработчика?" } },
+      { board: "refinement", column: "ready", label: "Квота 4:1: из каждых 5 задач минимум 1 — техдолг. CTO корректирует", actor: "CTO", highlight: { type: "rule", text: "Правило 16: Баланс бизнес/техдолг. Без квоты техдолг всегда проигрывает" } },
+      { board: "work", column: "todo", label: "По квоте: 4 бизнес-задачи, потом 1 техдолг. Разработчик берёт верхнюю", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Разработка по приоритету с учётом квоты", actor: "Dev" }
+    ]
+  },
+  {
+    id: 24, wave: 3,
+    title: "Task-formalizer выдаёт разный результат — вариативность",
+    track: "refinement",
+    description: "PM прогнал задачу дважды — получил разные AC и вопросы. Какой результат прикреплять?",
+    cardLabel: "Два прогона TF",
+    steps: [
+      { board: "refinement", column: "product-review", label: "PM прогнал task-formalizer. Получил пакет", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "Прогнал ещё раз — другие AC и вопросы", actor: "PM", highlight: { type: "rule", text: "Task-formalizer — инструмент, не оракул. PM берёт лучшее из обоих прогонов" } },
+      { board: "refinement", column: "product-review", label: "PM формирует финальный пакет. Прикрепляет к задаче", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "Техлид проверит качество на Tech Review", actor: "TL + QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум если нужен", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Готово. Процесс устойчив к вариативности инструмента", actor: "—" }
+    ]
+  },
+  {
+    id: 25, wave: 3,
+    title: "Fast track вытесняет Ready — разработчик берёт только баги",
+    track: "fast-track",
+    description: "В Ready 4 фичи. Разработчик третий день берёт fast track баги — они проще, быстрее закрываются.",
+    cardLabel: "Баг за багом",
+    steps: [
+      { board: "work", column: "in-progress", label: "Разработчик берёт fast track #1", actor: "Dev" },
+      { board: "work", column: "done", label: "Fast track #1 готов", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Разработчик берёт fast track #2", actor: "Dev" },
+      { board: "work", column: "done", label: "Fast track #2 готов", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Разработчик берёт fast track #3. Ready стоит!", actor: "Dev", highlight: { type: "problem", text: "> 3 fast track подряд без задачи из Ready" } },
+      { board: "work", column: "in-progress", label: "Техлид вмешивается: «Хватит фиксить мелочи, бери фичу из Ready»", actor: "TL", highlight: { type: "rule", text: "Правило 17: Fast track не вытесняет Ready. > 3 подряд → техлид перебалансирует" } },
+      { board: "work", column: "in-progress", label: "Разработчик берёт задачу из Ready", actor: "Dev" }
+    ]
+  },
+  {
+    id: 26, wave: 3,
+    title: "Спецификация устаревает — 3 недели в разработке",
+    track: "refinement",
+    description: "Фича «транскодер AV1». Спецификация зафиксирована. 3 недели разработки. На 2-й неделе Apple обновляет требования Safari к AV1.",
+    cardLabel: "Транскодер AV1",
+    steps: [
+      { board: "refinement", column: "draft", label: "Задача проходит полную воронку", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "Product Review", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "Tech Review", actor: "TL + QA" },
+      { board: "refinement", column: "ready", label: "Ready — спецификация зафиксирована", actor: "—" },
+      { board: "work", column: "in-progress", label: "Неделя 1: разработка идёт по спецификации", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Неделя 2: Apple обновляет требования Safari к AV1. Спецификация частично устарела", actor: "—", highlight: { type: "problem", text: "Внешние условия изменились. Спецификация была полной, но устарела" } },
+      { board: "work", column: "in-progress", label: "Разработчик + техлид оценивают масштаб. Scope не меняется существенно → адаптируют на месте", actor: "Dev + TL", highlight: { type: "rule", text: "Открытый вопрос: устаревание спецификаций. TTL для Ready? Ревалидация?" } },
+      { board: "work", column: "review", label: "Код-ревью с учётом адаптации", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Адаптация на месте без возврата в Refinement", actor: "—" }
+    ]
+  },
+  {
+    id: 27, wave: 3,
+    title: "Новый PM — плохие прогоны task-formalizer",
+    track: "refinement",
+    description: "Новый PM прогоняет задачи, но формулирует вход так, что результат поверхностный. Формально проходит, но качество низкое.",
+    cardLabel: "Задача нового PM",
+    steps: [
+      { board: "refinement", column: "draft", label: "Новый PM создаёт задачу", actor: "PM (новый)" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer. Результат поверхностный — StopConditions не сработали", actor: "PM (новый)" },
+      { board: "refinement", column: "tech-review", label: "Техлид видит: прогон поверхностный. Возвращает в Product Review", actor: "TL", highlight: { type: "rule", text: "Tech Review как гейт: ловит плохие прогоны. Первые 3-5 задач — техлид прогоняет вместе с новым PM" } },
+      { board: "refinement", column: "product-review", label: "Техлид помогает новому PM: показывает что считается хорошим входом", actor: "TL + PM (новый)" },
+      { board: "refinement", column: "tech-review", label: "Повторный Tech Review — теперь качество нормальное", actor: "TL + QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Готово. Процесс устойчив — Tech Review ловит плохие прогоны", actor: "—" }
+    ]
+  },
+  {
+    id: 28, wave: 3,
+    title: "Deploy freeze — задача ждёт в Deploy",
+    track: "mixed",
+    description: "Фича A в Deploy, готова. Но деплой заморожен — фича B сломала staging. Фича A ждёт.",
+    cardLabel: "Ждёт деплой",
+    steps: [
+      { board: "work", column: "in-progress", label: "Разработка фичи A завершена", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью пройден", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование пройдено", actor: "QA" },
+      { board: "work", column: "deploy", label: "Фича A в Deploy. Но деплой заморожен — фича B сломала staging", actor: "—", highlight: { type: "problem", text: "Deploy freeze. Задача ждёт" } },
+      { board: "work", column: "deploy", label: "Это операционная ситуация (CI/CD), не процессная. Задача просто ждёт", actor: "—", highlight: { type: "rule", text: "Out of scope: deploy freeze — часть CI/CD, не часть процесса проработки" } },
+      { board: "work", column: "deploy", label: "Фича B откачена, staging восстановлен", actor: "Dev" },
+      { board: "work", column: "done", label: "Фича A задеплоена", actor: "Dev" }
+    ]
+  },
+  {
+    id: 29, wave: 3,
+    title: "Техдолг без кворума — техлид сам себе ревьюер",
+    track: "techdebt",
+    description: "Техлид хочет переписать модуль. Создаёт задачу, прогоняет task-formalizer, ревьюит, приоритизирует — всё сам.",
+    cardLabel: "Переписать модуль",
+    steps: [
+      { board: "refinement", column: "tech-review", label: "Техлид создаёт задачу техдолга в Tech Review", actor: "TL" },
+      { board: "refinement", column: "tech-review", label: "Техлид прогоняет task-formalizer сам", actor: "TL", highlight: { type: "problem", text: "Техдолг — единственная дорожка без кворума. Техлид сам создаёт, сам ревьюит" } },
+      { board: "refinement", column: "tech-review", label: "Другой техлид или CTO ревьюит обоснование и спецификацию", actor: "CTO", highlight: { type: "rule", text: "Правило 18: Техдолг ревьюит не автор. Вторая пара глаз обязательна" } },
+      { board: "refinement", column: "tech-review", label: "QA ревьюит тест-матрицу", actor: "QA" },
+      { board: "refinement", column: "ready", label: "Задача прошла ревью. Приоритизация — CTO", actor: "CTO" },
+      { board: "work", column: "todo", label: "В очереди Work", actor: "—" },
+      { board: "work", column: "in-progress", label: "Разработка", actor: "Dev" },
+      { board: "work", column: "review", label: "Код-ревью", actor: "Dev" },
+      { board: "work", column: "testing", label: "Тестирование", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "Готово. Кворум обеспечен вторым техлидом/CTO", actor: "—" }
+    ]
+  },
+  {
+    id: 30, wave: 3,
+    title: "PM «не то имел в виду» — после деплоя",
+    track: "refinement",
+    description: "Фича «ограничение зрителей». Прошла весь путь. PM в проде: «Я имел в виду одновременных, а вы сделали уникальных за сутки».",
+    cardLabel: "Ограничение зрителей",
+    steps: [
+      { board: "refinement", column: "draft", label: "PM создаёт задачу «Ограничить количество зрителей до N»", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer. AC: «ограничить зрителей до N» — без уточнения", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "Tech Review. Техлид не заметил двусмысленность «зрителей»", actor: "TL + QA" },
+      { board: "refinement", column: "consilium", label: "Консилиум. Вопрос «одновременных vs уникальных» не поднят", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Ready. AC формально проверяемые, но двусмысленные", actor: "—" },
+      { board: "work", column: "in-progress", label: "Разработчик реализует «уникальных за сутки» (своя интерпретация)", actor: "Dev" },
+      { board: "work", column: "testing", label: "QA тестирует по AC — всё проходит", actor: "QA" },
+      { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
+      { board: "work", column: "done", label: "PM: «Это не то, что я имел в виду!»", actor: "PM", highlight: { type: "problem", text: "Процесс должен был это предотвратить. Task-formalizer должен был вынести двусмысленность в P0" } },
+      { board: "work", column: "done", label: "Кейс для ретроспективы: почему task-formalizer не поймал? Добавить в чеклист Ready: «AC не содержат двусмысленных терминов»", actor: "—", highlight: { type: "rule", text: "Процесс сработал штатно, но пробел в прогоне. Повод для улучшения" } }
+    ]
+  },
+  {
+    id: 31, wave: 3,
+    title: "Параллельные консилиумы — нагрузка на команду",
+    track: "refinement",
+    description: "3 задачи одновременно в Consilium. Каждая требует PM + TL + QA. При потоке 7-14 фичей/неделю — это 3-7 консилиумов.",
+    cardLabel: "3 консилиума",
+    steps: [
+      { board: "refinement", column: "consilium", label: "Задача 1 в Consilium: открытые P0 вопросы", actor: "PM + TL + QA" },
+      { board: "refinement", column: "consilium", label: "Задача 2 в Consilium: технические риски", actor: "PM + TL + QA" },
+      { board: "refinement", column: "consilium", label: "Задача 3 в Consilium: зависимости между командами", actor: "PM + TL + QA", highlight: { type: "rule", text: "~50% задач требуют консилиум. 3-7 в неделю по 15-30 мин = 1.5-3.5 часа. Терпимо при текущем потоке" } },
+      { board: "refinement", column: "ready", label: "Все 3 задачи проработаны и в Ready", actor: "—" },
+      { board: "refinement", column: "ready", label: "Процесс работает. Но при росте потока — станет проблемой. Мониторить", actor: "—", highlight: { type: "rule", text: "Правило 3: Нет вопросов — нет консилиума. Это фильтр нагрузки" } }
+    ]
+  },
+  {
+    id: 32, wave: 4,
+    title: "AI (task-formalizer) недоступен — fallback",
+    track: "refinement",
+    description: "PM начинает формализацию, task-formalizer не отвечает (сервис лежит). Два варианта: использовать альтернативный AI или формализовать вручную по шаблону.",
+    cardLabel: "AI fallback",
+    steps: [
+      { board: "refinement", column: "draft", label: "PM создаёт задачу, пытается запустить task-formalizer — сервис недоступен", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM переключается на альтернативный AI (ChatGPT/Claude) или формализует вручную по шаблону из документа", actor: "PM", highlight: { type: "rule", text: "Шаблон формализации — страховка от зависимости на конкретный инструмент. AI — помощник, не блокер" } },
+      { board: "refinement", column: "product-review", label: "Спецификация готова. Качество то же — шаблон стандартизирует выход независимо от инструмента", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "TL проводит Tech Review — артефакт не отличается от сгенерированного AI", actor: "TL" },
+      { board: "refinement", column: "consilium", label: "Консилиум: PM + TL + QA. Без отличий от обычного процесса", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Задача в Ready. Процесс не заблокирован — AI ускоряет, но не является SPOF", actor: "—", highlight: { type: "rule", text: "Правило: task-formalizer — ускоритель, не зависимость. Ручной fallback всегда доступен" } }
+    ]
+  },
+  {
+    id: 33, wave: 4,
+    title: "QA недоступен — PM берёт роль QA",
+    track: "refinement",
+    description: "QA в отпуске/болеет. По правилу замещения, PM как заказчик берёт на себя роль QA: участвует в консилиуме за двоих, проверяет тест-план, принимает задачу на Testing.",
+    cardLabel: "QA → PM",
+    steps: [
+      { board: "refinement", column: "tech-review", label: "TL завершает Tech Review. QA недоступен — PM уведомлён о замещении", actor: "TL", highlight: { type: "rule", text: "Замещение QA: PM берёт роль, т.к. он заказчик и знает ожидаемое поведение" } },
+      { board: "refinement", column: "consilium", label: "Консилиум: PM (за себя + за QA) + TL. PM проверяет AC и тест-план с позиции пользователя", actor: "PM + TL" },
+      { board: "refinement", column: "consilium", label: "PM формирует тест-план: happy path + основные ошибки. Без глубокого edge-case покрытия — это осознанный компромисс", actor: "PM", highlight: { type: "rule", text: "Компромисс: PM покрывает бизнес-сценарии, технические edge cases откладываются до возвращения QA" } },
+      { board: "refinement", column: "ready", label: "Задача в Ready с пометкой «тест-план без QA — требует доп. проверки»", actor: "PM" },
+      { board: "work", column: "in-progress", label: "Разработчик берёт задачу, реализует", actor: "Dev" },
+      { board: "work", column: "testing", label: "PM принимает задачу на Testing вместо QA. Проверяет по своему тест-плану", actor: "PM" },
+      { board: "work", column: "done", label: "Задача Done. Когда QA вернётся — ретроспективно проверит пропущенные edge cases", actor: "PM", highlight: { type: "rule", text: "После возвращения QA: ревью пропущенных задач — отдельный пункт в ретроспективе" } }
+    ]
+  },
+  {
+    id: 34, wave: 4,
+    title: "Ретроспектива → корректировка правила",
+    track: "mixed",
+    description: "На ретроспективе обнаружено: 3 из 5 fast track задач за спринт были переклассифицированы в Refinement. Метрика «переклассификации > 20%» сработала. Команда ужесточает критерий fast track.",
+    cardLabel: "Ретро → правило",
+    steps: [
+      { board: "refinement", column: "ready", label: "Ретроспектива (раз в 2 недели): PM + TL + QA смотрят метрики", actor: "PM + TL + QA", highlight: { type: "rule", text: "Правило 19: Ретроспектива процесса — раз в 2 недели. Timebox 30 минут" } },
+      { board: "refinement", column: "ready", label: "Метрика: 60% fast track переклассифицированы (порог 20%). Сигнал: критерии fast track слишком мягкие", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Разбор конкретных задач: «баг в платежах» оказался не багом, а недоработкой логики. «Фикс формы» потребовал изменения 3 компонентов", actor: "PM + TL + QA" },
+      { board: "refinement", column: "ready", label: "Решение: добавить в критерий fast track ограничение «затрагивает ≤ 1 компонент/сервис»", actor: "PM + TL + QA", highlight: { type: "rule", text: "Результат ретроспективы — конкретные корректировки процесса, не «будем лучше стараться»" } },
+      { board: "refinement", column: "ready", label: "Правило обновлено в документе. Следующие fast track задачи проходят по новому критерию", actor: "PM" }
+    ]
+  },
+  {
+    id: 35, wave: 4,
+    title: "Investigation → техдолг",
+    track: "investigation",
+    description: "Investigation на тему «почему API тормозит на больших списках» выявляет системную проблему: N+1 запросы в 4 эндпоинтах. Фикс одного — fast track, системное решение — техдолг.",
+    cardLabel: "N+1 → техдолг",
+    steps: [
+      { board: "refinement", column: "draft", label: "PM создаёт Investigation: «API медленный на списках > 100 элементов»", actor: "PM" },
+      { board: "work", column: "in-progress", label: "Dev проводит Investigation (timebox 1 день): профилирует, находит N+1 в 4 эндпоинтах", actor: "Dev", highlight: { type: "rule", text: "Investigation timebox: 1 день. Результат — отчёт с развилкой" } },
+      { board: "work", column: "in-progress", label: "Развилка: конкретный эндпоинт можно пофиксить за час (fast track), но системно нужен рефакторинг ORM-слоя", actor: "Dev" },
+      { board: "work", column: "in-progress", label: "Dev фиксит критичный эндпоинт как fast track (≤ 1 компонент, решение очевидно)", actor: "Dev" },
+      { board: "work", column: "testing", label: "Fast track фикс на Testing", actor: "QA" },
+      { board: "work", column: "done", label: "Fast track фикс Done", actor: "QA" },
+      { board: "refinement", column: "tech-review", label: "Dev/TL создаёт задачу техдолга: «Рефакторинг ORM-слоя — устранение N+1». Сразу в Tech Review с обоснованием из Investigation", actor: "TL", highlight: { type: "rule", text: "Техдолг: TL/Dev создаёт, сразу в Tech Review. Обоснование = результат Investigation" } },
+      { board: "refinement", column: "consilium", label: "Консилиум: TL (не автор) + PM + QA. Оценка scope, приоритет vs бизнес-задачи", actor: "TL₂ + PM + QA" },
+      { board: "refinement", column: "ready", label: "Техдолг в Ready. Приоритизирует CTO/TL. Investigation породил и quick fix, и системное улучшение", actor: "CTO/TL", highlight: { type: "rule", text: "Investigation — разведка. Результат: quick fix + техдолг. Оба трека работают" } }
+    ]
+  },
+  {
+    id: 36, wave: 4,
+    title: "Задача Done → обновление документации",
+    track: "refinement",
+    description: "Фича «новый биллинг» завершена. Но API изменился — нужно обновить документацию для внешних интеграторов и внутренний runbook для поддержки.",
+    cardLabel: "Docs после Done",
+    steps: [
+      { board: "work", column: "in-progress", label: "Dev завершает реализацию нового биллинга", actor: "Dev" },
+      { board: "work", column: "code-review", label: "Code Review: ревьюер замечает, что API контракт изменился — нужна документация", actor: "Dev₂", highlight: { type: "rule", text: "Code Review — точка контроля не только кода, но и сопутствующих артефактов" } },
+      { board: "work", column: "testing", label: "QA тестирует по тест-плану. Параллельно Dev обновляет API-документацию", actor: "QA + Dev" },
+      { board: "work", column: "testing", label: "QA проверяет, что документация соответствует реальному поведению API", actor: "QA" },
+      { board: "work", column: "done", label: "Задача Done: код + документация + runbook обновлены. Нет «тёмного знания»", actor: "Dev", highlight: { type: "rule", text: "Definition of Done включает документацию, если задача меняет внешний контракт или операционные процедуры" } }
+    ]
+  },
+  {
+    id: 37, wave: 4,
+    title: "Рост команды → упрощение процесса",
+    track: "mixed",
+    description: "В команду пришли 2 Senior+. По критериям из Части 8 «Эволюция процесса» можно упростить: Senior+ участвуют в Tech Review и консилиуме, снижая нагрузку на TL.",
+    cardLabel: "Эволюция",
+    steps: [
+      { board: "refinement", column: "ready", label: "Ретроспектива: TL перегружен — 80% времени на Tech Review и консилиумы", actor: "PM + TL + QA", highlight: { type: "rule", text: "Сигнал к эволюции: TL — bottleneck, в команде появились Senior+" } },
+      { board: "refinement", column: "ready", label: "Решение: Senior+ получают право проводить Tech Review (TL остаётся ревьюером для критичных задач)", actor: "PM + TL + CTO" },
+      { board: "refinement", column: "tech-review", label: "Новый процесс: Senior Dev проводит Tech Review задачи средней сложности", actor: "Senior Dev" },
+      { board: "refinement", column: "consilium", label: "Консилиум: Senior Dev (вместо TL) + PM + QA. TL подключается только при эскалации", actor: "Senior Dev + PM + QA", highlight: { type: "rule", text: "Эволюция: Senior+ разгружают TL. Процесс тот же, меняются участники" } },
+      { board: "refinement", column: "ready", label: "Задача в Ready. TL освобождён для архитектурных задач и менторинга", actor: "—" },
+      { board: "refinement", column: "ready", label: "Процесс адаптирован. Структура сохранена, нагрузка распределена. Следующий шаг — делегирование Product Review", actor: "—", highlight: { type: "rule", text: "Часть 8: процесс упрощается по мере роста команды. Критерии упрощения зафиксированы заранее" } }
+    ]
+  }
+];
+
+let currentCase = null;
+let currentStep = -1;
+let autoplayInterval = null;
+let isAutoplaying = false;
+
+const select = document.getElementById('case-select');
+const caseInfo = document.getElementById('case-info');
+const caseMeta = document.getElementById('case-meta');
+const caseTitle = document.getElementById('case-title');
+const caseDescription = document.getElementById('case-description');
+const stepCommentary = document.getElementById('step-commentary');
+const stepLabel = document.getElementById('step-label');
+const stepActor = document.getElementById('step-actor');
+const stepHighlight = document.getElementById('step-highlight');
+const controls = document.getElementById('controls');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAutoplay = document.getElementById('btn-autoplay');
+const btnReset = document.getElementById('btn-reset');
+const stepCounter = document.getElementById('step-counter');
+const progressBar = document.getElementById('progress-bar');
+const progressFill = document.getElementById('progress-fill');
+const emptyState = document.getElementById('empty-state');
+const externalBoard = document.getElementById('external-board');
+const externalBoardName = document.getElementById('external-board-name');
+const externalColName = document.getElementById('external-col-name');
+
+function init() {
+  populateSelect();
+  select.addEventListener('change', onCaseChange);
+  btnPrev.addEventListener('click', prevStep);
+  btnNext.addEventListener('click', nextStep);
+  btnAutoplay.addEventListener('click', toggleAutoplay);
+  btnReset.addEventListener('click', reset);
+  document.addEventListener('keydown', onKeyDown);
+}
+
+function populateSelect() {
+  const waves = [
+    { label: 'Волна 1 — базовые сценарии', from: 1, to: 12 },
+    { label: 'Волна 2 — edge cases', from: 13, to: 22 },
+    { label: 'Волна 3 — деградация и масштабирование', from: 23, to: 31 },
+    { label: 'Волна 4 — fallback, замещение, эволюция', from: 32, to: 37 }
+  ];
+  waves.forEach(w => {
+    const group = document.createElement('optgroup');
+    group.label = w.label;
+    CASES.filter(c => c.id >= w.from && c.id <= w.to).forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `#${c.id}: ${c.title}`;
+      group.appendChild(opt);
+    });
+    select.appendChild(group);
+  });
+}
+
+function onCaseChange() {
+  stopAutoplay();
+  const id = parseInt(select.value);
+  if (!id) { resetUI(); return; }
+  currentCase = CASES.find(c => c.id === id);
+  currentStep = -1;
+  showCaseInfo();
+  clearAllCards();
+  clearActiveColumns();
+  emptyState.style.display = 'none';
+  controls.style.display = 'flex';
+  progressBar.classList.add('visible');
+  updateControls();
+  updateProgress();
+  stepCommentary.classList.remove('visible');
+
+  const needsExternal = currentCase.steps.some(s => s.board === 'external');
+  externalBoard.classList.toggle('visible', needsExternal);
+}
+
+function showCaseInfo() {
+  const c = currentCase;
+  caseInfo.classList.add('visible');
+  caseTitle.textContent = `#${c.id}: ${c.title}`;
+  caseDescription.textContent = c.description;
+
+  const trackLabels = {
+    'fast-track': 'Fast track',
+    'investigation': 'Investigation',
+    'refinement': 'Refinement',
+    'techdebt': 'Техдолг',
+    'incident': 'Incident',
+    'mixed': 'Смешанный'
+  };
+
+  caseMeta.innerHTML = `
+    <span class="tag tag-${c.track}">${trackLabels[c.track]}</span>
+    <span class="tag" style="background:rgba(255,255,255,0.03);color:var(--text-dim);font-size:11px;font-weight:400;text-transform:none;letter-spacing:0">тип задачи &rarr; определяет маршрут</span>
+    <span class="tag" style="background:rgba(255,255,255,0.05);color:var(--text-dim)">Волна ${c.wave}</span>
+    <span class="tag" style="background:rgba(255,255,255,0.05);color:var(--text-dim)">${c.steps.length} шагов</span>
+  `;
+}
+
+function nextStep() {
+  if (!currentCase || currentStep >= currentCase.steps.length - 1) return;
+  currentStep++;
+  renderStep();
+  updateControls();
+  updateProgress();
+}
+
+function prevStep() {
+  if (!currentCase || currentStep <= 0) return;
+  clearStepVisuals();
+  currentStep--;
+  renderStep();
+  updateControls();
+  updateProgress();
+}
+
+function renderStep() {
+  const step = currentCase.steps[currentStep];
+  clearAllCards();
+  clearActiveColumns();
+
+  if (step.externalName) {
+    externalBoardName.textContent = step.externalName;
+    externalColName.textContent = step.externalCol;
+    externalBoard.classList.add('visible');
+  }
+
+  const col = document.querySelector(`.column[data-board="${step.board}"][data-col="${step.column}"]`);
+  if (col) {
+    col.classList.add('active');
+    const slot = col.querySelector('.card-slot');
+    const card = document.createElement('div');
+    card.className = `task-card ${currentCase.track}`;
+    const trackLabelsMap = {
+      'fast-track': 'Fast track',
+      'investigation': 'Investigation',
+      'refinement': 'Refinement',
+      'techdebt': 'Техдолг',
+      'incident': 'Incident',
+      'mixed': 'Смешанный'
+    };
+    card.innerHTML = `<span class="track-badge">${trackLabelsMap[currentCase.track]}</span>${currentCase.cardLabel}`;
+    slot.appendChild(card);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { card.classList.add('visible'); });
+    });
+  }
+
+  stepCommentary.classList.add('visible');
+  stepLabel.textContent = step.label;
+  stepActor.textContent = step.actor ? `Действует: ${step.actor}` : '';
+
+  if (step.highlight) {
+    stepHighlight.style.display = 'block';
+    stepHighlight.textContent = step.highlight.text;
+    stepHighlight.className = 'step-highlight';
+    if (step.highlight.type === 'problem') stepHighlight.classList.add('problem');
+    if (step.highlight.type === 'blocker') stepHighlight.classList.add('blocker');
+  } else {
+    stepHighlight.style.display = 'none';
+  }
+}
+
+function clearStepVisuals() {
+  clearAllCards();
+  clearActiveColumns();
+}
+
+function clearAllCards() {
+  document.querySelectorAll('.task-card').forEach(c => c.remove());
+}
+
+function clearActiveColumns() {
+  document.querySelectorAll('.column.active').forEach(c => c.classList.remove('active'));
+}
+
+function updateControls() {
+  if (!currentCase) return;
+  btnPrev.disabled = currentStep <= 0;
+  btnNext.disabled = currentStep >= currentCase.steps.length - 1;
+  const total = currentCase.steps.length;
+  const cur = currentStep + 1;
+  stepCounter.textContent = currentStep >= 0 ? `${cur} / ${total}` : `0 / ${total}`;
+}
+
+function updateProgress() {
+  if (!currentCase) return;
+  const pct = currentCase.steps.length > 0
+    ? ((currentStep + 1) / currentCase.steps.length) * 100
+    : 0;
+  progressFill.style.width = `${Math.max(0, pct)}%`;
+}
+
+function toggleAutoplay() {
+  if (isAutoplaying) {
+    stopAutoplay();
+  } else {
+    startAutoplay();
+  }
+}
+
+function startAutoplay() {
+  if (!currentCase) return;
+  isAutoplaying = true;
+  btnAutoplay.innerHTML = '&#9646;&#9646; Пауза';
+  if (currentStep >= currentCase.steps.length - 1) {
+    currentStep = -1;
+    clearAllCards();
+    clearActiveColumns();
+    stepCommentary.classList.remove('visible');
+  }
+  autoplayInterval = setInterval(() => {
+    if (currentStep >= currentCase.steps.length - 1) {
+      stopAutoplay();
+      return;
+    }
+    nextStep();
+  }, 1800);
+}
+
+function stopAutoplay() {
+  isAutoplaying = false;
+  btnAutoplay.innerHTML = '&#9654; Автоплей';
+  if (autoplayInterval) {
+    clearInterval(autoplayInterval);
+    autoplayInterval = null;
+  }
+}
+
+function reset() {
+  stopAutoplay();
+  if (!currentCase) return;
+  currentStep = -1;
+  clearAllCards();
+  clearActiveColumns();
+  stepCommentary.classList.remove('visible');
+  updateControls();
+  updateProgress();
+}
+
+function resetUI() {
+  currentCase = null;
+  currentStep = -1;
+  caseInfo.classList.remove('visible');
+  stepCommentary.classList.remove('visible');
+  controls.style.display = 'none';
+  progressBar.classList.remove('visible');
+  externalBoard.classList.remove('visible');
+  emptyState.style.display = 'block';
+  clearAllCards();
+  clearActiveColumns();
+}
+
+function onKeyDown(e) {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextStep(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prevStep(); }
+  if (e.key === 'r' || e.key === 'R') { reset(); }
+}
+
+init();
+</script>
+</body>
+</html>
