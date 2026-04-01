@@ -826,8 +826,8 @@ const CASES = [
     cardLabel: "Оплата СБП",
     steps: [
       { board: "refinement", column: "draft", label: "PM создаёт задачу: «Добавить оплату через СБП»", actor: "PM" },
-      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer: сценарии, AC, вопросы P0 (провайдер? таймаут? возвраты?)", actor: "PM" },
-      { board: "refinement", column: "tech-review", label: "Техлид прогоняет task-formalizer: риски, зависимости, оценка. QA ревьюит тест-матрицу", actor: "TL + QA" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет AI-формализацию: сценарии, AC, вопросы P0 (провайдер? таймаут? возвраты?)", actor: "PM" },
+      { board: "refinement", column: "tech-review", label: "Техлид прогоняет AI-формализацию: риски, зависимости, оценка. QA ревьюит тест-матрицу", actor: "TL + QA" },
       { board: "refinement", column: "consilium", label: "Консилиум: закрывают P0 вопросы — какой провайдер, что при таймауте, как возвраты", actor: "PM + TL + QA" },
       { board: "refinement", column: "ready", label: "Все P0 закрыты, AC проверяемые, тест-план есть. Задача готова", actor: "—" },
       { board: "work", column: "todo", label: "Задача попадает в очередь Work", actor: "—" },
@@ -895,7 +895,7 @@ const CASES = [
     cardLabel: "Дашборд аналитики",
     steps: [
       { board: "refinement", column: "draft", label: "PM создаёт задачу «Дашборд аналитики для клиентов»", actor: "PM" },
-      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer: сценарии, метрики, AC", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет AI-формализацию: сценарии, метрики, AC", actor: "PM" },
       { board: "refinement", column: "tech-review", label: "Техлид определяет контракт gRPC/GraphQL между frontend и backend. Контракт фиксируется в спецификации", actor: "TL + QA", highlight: { type: "rule", text: "Правило 10: Контракт до разработки. Без контракта задача не переходит в Ready" } },
       { board: "refinement", column: "consilium", label: "Консилиум: закрывают вопросы по API, формату данных, пагинации", actor: "PM + TL + QA" },
       { board: "refinement", column: "ready", label: "Контракт зафиксирован, задача готова. Порождает 2 дочерние карточки", actor: "—" },
@@ -917,7 +917,7 @@ const CASES = [
     steps: [
       { board: "refinement", column: "draft", label: "Задача создана в Draft. PM недоступен 3 дня", actor: "—", highlight: { type: "problem", text: "PM SPOF: воронка стоит" } },
       { board: "refinement", column: "draft", label: "Отсутствие > 1 рабочего дня — заместитель берёт на себя Product Review", actor: "—", highlight: { type: "rule", text: "Правило 9: Замещение обязательно. Заместитель определяется заранее" } },
-      { board: "refinement", column: "product-review", label: "Заместитель PM прогоняет task-formalizer", actor: "PM (зам.)" },
+      { board: "refinement", column: "product-review", label: "Заместитель PM прогоняет AI-формализацию", actor: "PM (зам.)" },
       { board: "refinement", column: "tech-review", label: "Техлид делает Tech Review как обычно", actor: "TL + QA" },
       { board: "refinement", column: "consilium", label: "Консилиум с заместителем PM", actor: "PM (зам.) + TL + QA" },
       { board: "refinement", column: "ready", label: "Задача готова. Замещение сработало", actor: "—" }
@@ -932,7 +932,7 @@ const CASES = [
     steps: [
       { board: "refinement", column: "product-review", label: "Задача прошла Product Review, ждёт Tech Review. Техлид занят инцидентом", actor: "—", highlight: { type: "problem", text: "TL SPOF: воронка стоит" } },
       { board: "refinement", column: "product-review", label: "Отсутствие > 1 дня — назначенный Senior берёт Tech Review", actor: "—", highlight: { type: "rule", text: "Правило 9: Заместитель техлида — назначенный Senior" } },
-      { board: "refinement", column: "tech-review", label: "Senior прогоняет task-formalizer, QA ревьюит тест-матрицу", actor: "Senior + QA" },
+      { board: "refinement", column: "tech-review", label: "Senior прогоняет AI-формализацию, QA ревьюит тест-матрицу", actor: "Senior + QA" },
       { board: "refinement", column: "consilium", label: "Консилиум с Senior вместо техлида", actor: "PM + Senior + QA" },
       { board: "refinement", column: "ready", label: "Задача готова. Замещение сработало", actor: "—" }
     ]
@@ -984,7 +984,7 @@ const CASES = [
     cardLabel: "Доступ по IP",
     steps: [
       { board: "refinement", column: "draft", label: "PM создаёт задачу", actor: "PM" },
-      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет AI-формализацию", actor: "PM" },
       { board: "refinement", column: "tech-review", label: "Техлид прогоняет, QA ревьюит тест-матрицу", actor: "TL + QA" },
       { board: "refinement", column: "consilium", label: "Консилиум: PM и техлид не согласны по scope (whitelist vs blacklist)", actor: "PM + TL + QA", highlight: { type: "problem", text: "Разногласие на консилиуме. Кто арбитр?" } },
       { board: "refinement", column: "consilium", label: "Продуктовый вопрос → финальное решение за PM. Технический → за техлидом", actor: "PM + TL", highlight: { type: "rule", text: "Эскалация: продукт → PM, техника → TL, не договорились → CEO/CPO/CTO" } },
@@ -1000,7 +1000,7 @@ const CASES = [
     cardLabel: "UI трансляций",
     steps: [
       { board: "refinement", column: "draft", label: "PM создаёт задачу. Дизайн ещё не готов", actor: "PM" },
-      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer. Но макетов нет — AC неполные", actor: "PM", highlight: { type: "problem", text: "Дизайн не готов. Двигать дальше или ждать?" } },
+      { board: "refinement", column: "product-review", label: "PM прогоняет AI-формализацию. Но макетов нет — AC неполные", actor: "PM", highlight: { type: "problem", text: "Дизайн не готов. Двигать дальше или ждать?" } },
       { board: "refinement", column: "product-review", label: "Задача застревает. Дизайн в другом пространстве, формальной связи нет", actor: "—", highlight: { type: "blocker", text: "Открытый вопрос: зависимость от дизайна. Процесс это не решает — см. раздел «Открытые вопросы»" } }
     ]
   },
@@ -1012,7 +1012,7 @@ const CASES = [
     cardLabel: "Интеграция X",
     steps: [
       { board: "refinement", column: "draft", label: "PM создаёт задачу", actor: "PM" },
-      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет AI-формализацию", actor: "PM" },
       { board: "refinement", column: "tech-review", label: "Техлид обнаруживает: у X нет API для юрлиц в РФ. Задача бессмысленна", actor: "TL", highlight: { type: "problem", text: "Задача стала неактуальной на середине воронки" } },
       { board: "refinement", column: "tech-review", label: "Техлид закрывает задачу со статусом Cancelled и указывает причину", actor: "TL", highlight: { type: "rule", text: "Правило 13: Задачу можно отменить на любом этапе Refinement" } }
     ]
@@ -1037,7 +1037,7 @@ const CASES = [
     cardLabel: "Рефакторинг транскодера",
     steps: [
       { board: "refinement", column: "tech-review", label: "Техлид создаёт задачу сразу в Tech Review с обоснованием. Минует Draft и Product Review", actor: "TL", highlight: { type: "rule", text: "Техдолг: вход от техлида, сразу в Tech Review" } },
-      { board: "refinement", column: "tech-review", label: "Техлид прогоняет task-formalizer. Другой техлид (или CTO) ревьюит", actor: "TL + CTO", highlight: { type: "rule", text: "Правило 18: Техдолг ревьюит не автор" } },
+      { board: "refinement", column: "tech-review", label: "Техлид прогоняет AI-формализацию. Другой техлид (или CTO) ревьюит", actor: "TL + CTO", highlight: { type: "rule", text: "Правило 18: Техдолг ревьюит не автор" } },
       { board: "refinement", column: "tech-review", label: "QA ревьюит тест-матрицу как обычно", actor: "QA" },
       { board: "refinement", column: "consilium", label: "Консилиум (если есть открытые вопросы)", actor: "TL + QA" },
       { board: "refinement", column: "ready", label: "Задача готова. Приоритизация — CTO и тимлиды, не PM", actor: "CTO" },
@@ -1057,7 +1057,7 @@ const CASES = [
     cardLabel: "Whitelist IP",
     steps: [
       { board: "refinement", column: "draft", label: "PM создаёт срочную задачу", actor: "PM" },
-      { board: "refinement", column: "product-review", label: "Ускоренная воронка: PM и техлид прогоняют task-formalizer вместе за один присест (30 мин)", actor: "PM + TL", highlight: { type: "rule", text: "Срочные запросы: ускоренная воронка, PM + TL вместе" } },
+      { board: "refinement", column: "product-review", label: "Ускоренная воронка: PM и техлид прогоняют AI-формализацию вместе за один присест (30 мин)", actor: "PM + TL", highlight: { type: "rule", text: "Срочные запросы: ускоренная воронка, PM + TL вместе" } },
       { board: "refinement", column: "tech-review", label: "Tech Review сразу после Product Review, QA ревьюит тест-матрицу", actor: "TL + QA" },
       { board: "refinement", column: "consilium", label: "Консилиум сразу — если есть вопросы", actor: "PM + TL + QA" },
       { board: "refinement", column: "ready", label: "Задача готова за полдня вместо 1-2 дней", actor: "—" },
@@ -1143,7 +1143,7 @@ const CASES = [
     steps: [
       { board: "refinement", column: "ready", label: "Задача в Ready. PM хочет добавить scope: ограничение по географии", actor: "PM", highlight: { type: "problem", text: "Изменение scope в Ready. Добавить на месте или вернуть?" } },
       { board: "refinement", column: "product-review", label: "Возврат в Product Review. Без исключений", actor: "PM", highlight: { type: "rule", text: "Правило 14: Изменение scope в Ready = возврат в начало. Дополнение «комментарием к комментарию» запрещено" } },
-      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer заново с расширенным scope", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет AI-формализацию заново с расширенным scope", actor: "PM" },
       { board: "refinement", column: "tech-review", label: "Техлид ревьюит обновлённую спецификацию", actor: "TL + QA" },
       { board: "refinement", column: "consilium", label: "Консилиум по новому scope", actor: "PM + TL + QA" },
       { board: "refinement", column: "ready", label: "Задача снова в Ready с полным scope", actor: "—" }
@@ -1183,13 +1183,13 @@ const CASES = [
   },
   {
     id: 24, wave: 3,
-    title: "Task-formalizer выдаёт разный результат — вариативность",
+    title: "AI-формализация выдаёт разный результат — вариативность",
     track: "refinement",
     description: "PM прогнал задачу дважды — получил разные AC и вопросы. Какой результат прикреплять?",
     cardLabel: "Два прогона TF",
     steps: [
-      { board: "refinement", column: "product-review", label: "PM прогнал task-formalizer. Получил пакет", actor: "PM" },
-      { board: "refinement", column: "product-review", label: "Прогнал ещё раз — другие AC и вопросы", actor: "PM", highlight: { type: "rule", text: "Task-formalizer — инструмент, не оракул. PM берёт лучшее из обоих прогонов" } },
+      { board: "refinement", column: "product-review", label: "PM прогнал AI-формализацию. Получил пакет", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "Прогнал ещё раз — другие AC и вопросы", actor: "PM", highlight: { type: "rule", text: "AI-формализация — инструмент, не оракул. PM берёт лучшее из обоих прогонов" } },
       { board: "refinement", column: "product-review", label: "PM формирует финальный пакет. Прикрепляет к задаче", actor: "PM" },
       { board: "refinement", column: "tech-review", label: "Техлид проверит качество на Tech Review", actor: "TL + QA" },
       { board: "refinement", column: "consilium", label: "Консилиум если нужен", actor: "PM + TL + QA" },
@@ -1234,13 +1234,13 @@ const CASES = [
   },
   {
     id: 27, wave: 3,
-    title: "Новый PM — плохие прогоны task-formalizer",
+    title: "Новый PM — плохие прогоны AI-формализации",
     track: "refinement",
     description: "Новый PM прогоняет задачи, но формулирует вход так, что результат поверхностный. Формально проходит, но качество низкое.",
     cardLabel: "Задача нового PM",
     steps: [
       { board: "refinement", column: "draft", label: "Новый PM создаёт задачу", actor: "PM (новый)" },
-      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer. Результат поверхностный — StopConditions не сработали", actor: "PM (новый)" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет AI-формализацию. Результат поверхностный — StopConditions не сработали", actor: "PM (новый)" },
       { board: "refinement", column: "tech-review", label: "Техлид видит: прогон поверхностный. Возвращает в Product Review", actor: "TL", highlight: { type: "rule", text: "Tech Review как гейт: ловит плохие прогоны. Первые 3-5 задач — техлид прогоняет вместе с новым PM" } },
       { board: "refinement", column: "product-review", label: "Техлид помогает новому PM: показывает что считается хорошим входом", actor: "TL + PM (новый)" },
       { board: "refinement", column: "tech-review", label: "Повторный Tech Review — теперь качество нормальное", actor: "TL + QA" },
@@ -1268,11 +1268,11 @@ const CASES = [
     id: 29, wave: 3,
     title: "Техдолг без кворума — техлид сам себе ревьюер",
     track: "techdebt",
-    description: "Техлид хочет переписать модуль. Создаёт задачу, прогоняет task-formalizer, ревьюит, приоритизирует — всё сам.",
+    description: "Техлид хочет переписать модуль. Создаёт задачу, прогоняет AI-формализацию, ревьюит, приоритизирует — всё сам.",
     cardLabel: "Переписать модуль",
     steps: [
       { board: "refinement", column: "tech-review", label: "Техлид создаёт задачу техдолга в Tech Review", actor: "TL" },
-      { board: "refinement", column: "tech-review", label: "Техлид прогоняет task-formalizer сам", actor: "TL", highlight: { type: "problem", text: "Техдолг — единственная дорожка без кворума. Техлид сам создаёт, сам ревьюит" } },
+      { board: "refinement", column: "tech-review", label: "Техлид прогоняет AI-формализацию сам", actor: "TL", highlight: { type: "problem", text: "Техдолг — единственная дорожка без кворума. Техлид сам создаёт, сам ревьюит" } },
       { board: "refinement", column: "tech-review", label: "Другой техлид или CTO ревьюит обоснование и спецификацию", actor: "CTO", highlight: { type: "rule", text: "Правило 18: Техдолг ревьюит не автор. Вторая пара глаз обязательна" } },
       { board: "refinement", column: "tech-review", label: "QA ревьюит тест-матрицу", actor: "QA" },
       { board: "refinement", column: "ready", label: "Задача прошла ревью. Приоритизация — CTO", actor: "CTO" },
@@ -1292,15 +1292,15 @@ const CASES = [
     cardLabel: "Ограничение зрителей",
     steps: [
       { board: "refinement", column: "draft", label: "PM создаёт задачу «Ограничить количество зрителей до N»", actor: "PM" },
-      { board: "refinement", column: "product-review", label: "PM прогоняет task-formalizer. AC: «ограничить зрителей до N» — без уточнения", actor: "PM" },
+      { board: "refinement", column: "product-review", label: "PM прогоняет AI-формализацию. AC: «ограничить зрителей до N» — без уточнения", actor: "PM" },
       { board: "refinement", column: "tech-review", label: "Tech Review. Техлид не заметил двусмысленность «зрителей»", actor: "TL + QA" },
       { board: "refinement", column: "consilium", label: "Консилиум. Вопрос «одновременных vs уникальных» не поднят", actor: "PM + TL + QA" },
       { board: "refinement", column: "ready", label: "Ready. AC формально проверяемые, но двусмысленные", actor: "—" },
       { board: "work", column: "in-progress", label: "Разработчик реализует «уникальных за сутки» (своя интерпретация)", actor: "Dev" },
       { board: "work", column: "testing", label: "QA тестирует по AC — всё проходит", actor: "QA" },
       { board: "work", column: "deploy", label: "Деплой", actor: "Dev" },
-      { board: "work", column: "done", label: "PM: «Это не то, что я имел в виду!»", actor: "PM", highlight: { type: "problem", text: "Процесс должен был это предотвратить. Task-formalizer должен был вынести двусмысленность в P0" } },
-      { board: "work", column: "done", label: "Кейс для ретроспективы: почему task-formalizer не поймал? Добавить в чеклист Ready: «AC не содержат двусмысленных терминов»", actor: "—", highlight: { type: "rule", text: "Процесс сработал штатно, но пробел в прогоне. Повод для улучшения" } }
+      { board: "work", column: "done", label: "PM: «Это не то, что я имел в виду!»", actor: "PM", highlight: { type: "problem", text: "Процесс должен был это предотвратить. AI-формализация должна была вынести двусмысленность в P0" } },
+      { board: "work", column: "done", label: "Кейс для ретроспективы: почему AI-формализация не поймала? Добавить в чеклист Ready: «AC не содержат двусмысленных терминов»", actor: "—", highlight: { type: "rule", text: "Процесс сработал штатно, но пробел в прогоне. Повод для улучшения" } }
     ]
   },
   {
@@ -1319,17 +1319,17 @@ const CASES = [
   },
   {
     id: 32, wave: 4,
-    title: "AI (task-formalizer) недоступен — fallback",
+    title: "AI-формализация недоступна — fallback",
     track: "refinement",
-    description: "PM начинает формализацию, task-formalizer не отвечает (сервис лежит). Два варианта: использовать альтернативный AI или формализовать вручную по шаблону.",
+    description: "PM начинает формализацию, AI-сервис не отвечает (лежит). Два варианта: использовать альтернативный AI или формализовать вручную по шаблону.",
     cardLabel: "AI fallback",
     steps: [
-      { board: "refinement", column: "draft", label: "PM создаёт задачу, пытается запустить task-formalizer — сервис недоступен", actor: "PM" },
+      { board: "refinement", column: "draft", label: "PM создаёт задачу, пытается запустить AI-формализацию — сервис недоступен", actor: "PM" },
       { board: "refinement", column: "product-review", label: "PM переключается на альтернативный AI (ChatGPT/Claude) или формализует вручную по шаблону из документа", actor: "PM", highlight: { type: "rule", text: "Шаблон формализации — страховка от зависимости на конкретный инструмент. AI — помощник, не блокер" } },
       { board: "refinement", column: "product-review", label: "Спецификация готова. Качество то же — шаблон стандартизирует выход независимо от инструмента", actor: "PM" },
       { board: "refinement", column: "tech-review", label: "TL проводит Tech Review — артефакт не отличается от сгенерированного AI", actor: "TL" },
       { board: "refinement", column: "consilium", label: "Консилиум: PM + TL + QA. Без отличий от обычного процесса", actor: "PM + TL + QA" },
-      { board: "refinement", column: "ready", label: "Задача в Ready. Процесс не заблокирован — AI ускоряет, но не является SPOF", actor: "—", highlight: { type: "rule", text: "Правило: task-formalizer — ускоритель, не зависимость. Ручной fallback всегда доступен" } }
+      { board: "refinement", column: "ready", label: "Задача в Ready. Процесс не заблокирован — AI ускоряет, но не является SPOF", actor: "—", highlight: { type: "rule", text: "Правило: AI-формализация — ускоритель, не зависимость. Ручной fallback всегда доступен" } }
     ]
   },
   {
